@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from app.models import Ingredient, Instruction, Protein, Recipe
+from app.models import Ingredient, Instruction, Protein, Recipe, Tag
 
 PROTEIN_NAMES = [
     "Chicken",
@@ -13,6 +13,17 @@ PROTEIN_NAMES = [
     "Vegetarian",
 ]
 
+TAG_NAMES = [
+    "smoker",
+    "weeknight",
+    "meal-prep",
+    "one-pot",
+    "grill",
+    "kid-friendly",
+    "make-ahead",
+    "spicy",
+]
+
 SAMPLE_RECIPES = [
     {
         "name": "Simple Roast Chicken",
@@ -23,6 +34,7 @@ SAMPLE_RECIPES = [
         "servings": 4,
         "source": "Family recipe",
         "notes": "Let rest 10 minutes before carving.",
+        "tags": ["make-ahead"],
         "ingredients": [
             ("1", "whole", "chicken", "about 4-5 lbs"),
             ("2", "tbsp", "olive oil", None),
@@ -49,6 +61,7 @@ SAMPLE_RECIPES = [
         "servings": 6,
         "source": None,
         "notes": None,
+        "tags": ["weeknight", "one-pot", "meal-prep"],
         "ingredients": [
             ("2", "lbs", "ground beef", None),
             ("1", "whole", "onion", "diced"),
@@ -75,6 +88,7 @@ SAMPLE_RECIPES = [
         "servings": 4,
         "source": None,
         "notes": "Serve over steamed rice.",
+        "tags": ["weeknight", "spicy"],
         "ingredients": [
             ("1", "lb", "pork tenderloin", "thinly sliced"),
             ("2", "tbsp", "soy sauce", None),
@@ -102,6 +116,7 @@ SAMPLE_RECIPES = [
         "servings": 2,
         "source": None,
         "notes": None,
+        "tags": ["grill", "weeknight"],
         "ingredients": [
             ("2", "fillets", "salmon", "6 oz each"),
             ("1", "tbsp", "olive oil", None),
@@ -127,6 +142,7 @@ SAMPLE_RECIPES = [
         "servings": 4,
         "source": None,
         "notes": "Great with any seasonal vegetables.",
+        "tags": ["weeknight", "kid-friendly"],
         "ingredients": [
             ("12", "oz", "pasta", None),
             ("2", "tbsp", "olive oil", None),
@@ -156,11 +172,20 @@ def seed_proteins(session: Session) -> None:
     session.commit()
 
 
+def seed_tags(session: Session) -> None:
+    existing = set(session.exec(select(Tag.name)).all())
+    for name in TAG_NAMES:
+        if name not in existing:
+            session.add(Tag(name=name))
+    session.commit()
+
+
 def seed_recipes(session: Session) -> None:
     if session.exec(select(Recipe.id).limit(1)).first() is not None:
         return
 
     proteins_by_name = {p.name: p for p in session.exec(select(Protein)).all()}
+    tags_by_name = {t.name: t for t in session.exec(select(Tag)).all()}
 
     for recipe_data in SAMPLE_RECIPES:
         protein = proteins_by_name[recipe_data["protein"]]
@@ -173,6 +198,7 @@ def seed_recipes(session: Session) -> None:
             servings=recipe_data["servings"],
             source=recipe_data["source"],
             notes=recipe_data["notes"],
+            tags=[tags_by_name[name] for name in recipe_data.get("tags", [])],
         )
         session.add(recipe)
         session.flush()
@@ -205,4 +231,5 @@ def seed_recipes(session: Session) -> None:
 
 def seed(session: Session) -> None:
     seed_proteins(session)
+    seed_tags(session)
     seed_recipes(session)

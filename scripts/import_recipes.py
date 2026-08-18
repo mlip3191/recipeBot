@@ -5,10 +5,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from sqlalchemy import func  # noqa: E402
 from sqlmodel import Session, select  # noqa: E402
 
 from app.db import create_db_and_tables, engine  # noqa: E402
-from app.models import Ingredient, Instruction, Protein, Recipe  # noqa: E402
+from app.models import Ingredient, Instruction, Protein, Recipe, Tag  # noqa: E402
 
 REQUIRED_RECIPE_FIELDS = [
     "name",
@@ -30,6 +31,23 @@ def validate_recipe_data(data: dict) -> None:
     for instruction in data.get("instructions", []):
         if "text" not in instruction:
             raise ValueError("an instruction is missing 'text'")
+
+
+def resolve_tags(session: Session, tag_names: list[str]) -> list[Tag]:
+    tags = []
+    for tag_name in tag_names:
+        name = tag_name.strip()
+        if not name:
+            continue
+        tag = session.exec(
+            select(Tag).where(func.lower(Tag.name) == name.lower())
+        ).first()
+        if tag is None:
+            tag = Tag(name=name)
+            session.add(tag)
+            session.flush()
+        tags.append(tag)
+    return tags
 
 
 def upsert_recipe(session: Session, data: dict) -> str:
@@ -93,6 +111,8 @@ def upsert_recipe(session: Session, data: dict) -> str:
                 text=instruction["text"],
             )
         )
+
+    recipe.tags = resolve_tags(session, data.get("tags", []))
 
     return action
 

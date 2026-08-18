@@ -19,6 +19,8 @@ A self-hosted recipe repository web app.
 - **proteins**: id, name (lookup table)
 - **ingredients**: id, recipe_id, position, quantity, unit, item, prep_note
 - **instructions**: id, recipe_id, step_number, text
+- **tags**: id, name (lookup table)
+- **recipe_tag_link**: recipe_id (FK), tag_id (FK) — many-to-many join table
 
 ## Core user flow
 

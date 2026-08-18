@@ -10,6 +10,8 @@ const totalTimeInput = document.getElementById("field-total-time");
 const servingsInput = document.getElementById("field-servings");
 const sourceInput = document.getElementById("field-source");
 const notesInput = document.getElementById("field-notes");
+const tagsInput = document.getElementById("field-tags");
+const tagOptionsList = document.getElementById("tag-options");
 const ingredientsRows = document.getElementById("ingredients-rows");
 const instructionsRows = document.getElementById("instructions-rows");
 const addIngredientBtn = document.getElementById("add-ingredient-btn");
@@ -122,6 +124,15 @@ function populateGenreOptions(genres) {
     }
 }
 
+function populateTagOptions(tags) {
+    tagOptionsList.innerHTML = "";
+    for (const tag of tags) {
+        const option = document.createElement("option");
+        option.value = tag.name;
+        tagOptionsList.appendChild(option);
+    }
+}
+
 function showStatus(message, isError) {
     formStatus.textContent = message;
     formStatus.classList.remove("hidden");
@@ -148,6 +159,7 @@ async function loadRecipeForEdit(id) {
     servingsInput.value = data.servings;
     sourceInput.value = data.source || "";
     notesInput.value = data.notes || "";
+    tagsInput.value = data.tags.map((tag) => tag.name).join(", ");
 
     ingredientsRows.innerHTML = "";
     for (const ingredient of data.ingredients) {
@@ -179,6 +191,13 @@ function collectInstructions() {
         .filter((instruction) => instruction.text);
 }
 
+function collectTags() {
+    return tagsInput.value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+}
+
 async function handleSubmit(event) {
     event.preventDefault();
     hideStatus();
@@ -194,6 +213,7 @@ async function handleSubmit(event) {
         notes: notesInput.value.trim() || null,
         ingredients: collectIngredients(),
         instructions: collectInstructions(),
+        tags: collectTags(),
     };
 
     const url = recipeId ? `/api/recipes/${recipeId}` : "/api/recipes";
@@ -237,13 +257,15 @@ async function handleDelete() {
 }
 
 async function init() {
-    const [proteinsResult, genresResult] = await Promise.all([
+    const [proteinsResult, genresResult, tagsResult] = await Promise.all([
         fetchJSON("/api/proteins"),
         fetchJSON("/api/genres"),
+        fetchJSON("/api/tags"),
     ]);
 
     populateProteinSelect(proteinsResult.ok ? proteinsResult.data : []);
     populateGenreOptions(genresResult.ok ? genresResult.data : []);
+    populateTagOptions(tagsResult.ok ? tagsResult.data : []);
 
     if (recipeId) {
         await loadRecipeForEdit(recipeId);

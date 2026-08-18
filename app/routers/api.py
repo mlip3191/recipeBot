@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.models import Ingredient, Instruction, Protein, Recipe
+from app.models import Ingredient, Instruction, Protein, Recipe, RecipeTagLink, Tag
 from app.schemas import (
     IngredientCreate,
     InstructionCreate,
@@ -11,6 +11,7 @@ from app.schemas import (
     RecipeCreate,
     RecipeRead,
     RecipeSummary,
+    TagRead,
 )
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -28,6 +29,34 @@ def resolve_protein_id(session: Session, protein: str) -> int | None:
         return result.id if result else None
 
     return protein_id if session.get(Protein, protein_id) else None
+
+
+def filter_by_tags(statement, tag_names: list[str]):
+    for tag_name in tag_names:
+        matching_recipe_ids = (
+            select(RecipeTagLink.recipe_id)
+            .join(Tag, Tag.id == RecipeTagLink.tag_id)
+            .where(func.lower(Tag.name) == tag_name.lower())
+        )
+        statement = statement.where(Recipe.id.in_(matching_recipe_ids))
+    return statement
+
+
+def resolve_tags(session: Session, tag_names: list[str]) -> list[Tag]:
+    tags = []
+    for tag_name in tag_names:
+        name = tag_name.strip()
+        if not name:
+            continue
+        tag = session.exec(
+            select(Tag).where(func.lower(Tag.name) == name.lower())
+        ).first()
+        if tag is None:
+            tag = Tag(name=name)
+            session.add(tag)
+            session.flush()
+        tags.append(tag)
+    return tags
 
 
 def apply_children(
@@ -67,10 +96,16 @@ def list_genres(session: Session = Depends(get_session)):
     return session.exec(select(Recipe.genre).distinct().order_by(Recipe.genre)).all()
 
 
+@router.get("/tags", response_model=list[TagRead])
+def list_tags(session: Session = Depends(get_session)):
+    return session.exec(select(Tag).order_by(Tag.name)).all()
+
+
 @router.get("/recipes", response_model=list[RecipeSummary])
 def list_recipes(
     protein: str | None = None,
     genre: str | None = None,
+    tags: list[str] = Query(default=[]),
     session: Session = Depends(get_session),
 ):
     statement = select(Recipe)
@@ -81,6 +116,7 @@ def list_recipes(
         statement = statement.where(Recipe.protein_id == protein_id)
     if genre is not None:
         statement = statement.where(func.lower(Recipe.genre) == genre.lower())
+    statement = filter_by_tags(statement, tags)
 
     recipes = session.exec(statement).all()
     return [
@@ -100,6 +136,7 @@ def list_recipes(
 def random_recipe(
     protein: str | None = None,
     genre: str | None = None,
+    tags: list[str] = Query(default=[]),
     session: Session = Depends(get_session),
 ):
     statement = select(Recipe)
@@ -110,6 +147,7 @@ def random_recipe(
         statement = statement.where(Recipe.protein_id == protein_id)
     if genre is not None:
         statement = statement.where(func.lower(Recipe.genre) == genre.lower())
+    statement = filter_by_tags(statement, tags)
 
     statement = statement.order_by(func.random()).limit(1)
     recipe = session.exec(statement).first()
@@ -147,6 +185,7 @@ def create_recipe(payload: RecipeCreate, session: Session = Depends(get_session)
     session.flush()
 
     apply_children(session, recipe.id, payload.ingredients, payload.instructions)
+    recipe.tags = resolve_tags(session, payload.tags)
     session.commit()
     session.refresh(recipe)
     return recipe
@@ -181,6 +220,7 @@ def replace_recipe(
     session.flush()
 
     apply_children(session, recipe.id, payload.ingredients, payload.instructions)
+    recipe.tags = resolve_tags(session, payload.tags)
     session.commit()
     session.refresh(recipe)
     return recipe

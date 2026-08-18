@@ -103,6 +103,39 @@ select {
     font-size: 1rem;
 }
 
+.tag-filters {
+    margin-bottom: 1.5rem;
+}
+
+.tag-filters-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+}
+
+.tag-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tag-checkbox input {
+    margin: 0;
+}
+
 .actions {
     display: flex;
     flex-wrap: wrap;
@@ -204,6 +237,12 @@ a.btn {
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 600;
+}
+
+.badge-tag {
+    background: transparent;
+    border: 1px solid var(--badge-fg);
+    font-weight: 500;
 }
 
 .meta {

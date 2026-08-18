@@ -8,6 +8,7 @@
     "servings": 4,
     "source": "Family recipe",
     "notes": "Great with mashed potatoes.",
+    "tags": ["weeknight", "make-ahead"],
     "ingredients": [
       {"position": 1, "quantity": "6", "unit": "whole", "item": "chicken thighs", "prep_note": "bone-in, skin-on"},
       {"position": 2, "quantity": "4", "unit": "tbsp", "item": "butter", "prep_note": null},
@@ -34,6 +35,7 @@
     "servings": 4,
     "source": null,
     "notes": "Double the recipe for a crowd.",
+    "tags": ["weeknight", "kid-friendly"],
     "ingredients": [
       {"position": 1, "quantity": "1", "unit": "lb", "item": "ground beef", "prep_note": null},
       {"position": 2, "quantity": "1", "unit": "packet", "item": "taco seasoning", "prep_note": null},

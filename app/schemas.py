@@ -8,6 +8,11 @@ class ProteinRead(SQLModel):
     name: str
 
 
+class TagRead(SQLModel):
+    id: int
+    name: str
+
+
 class IngredientRead(SQLModel):
     id: int
     position: int
@@ -58,6 +63,7 @@ class RecipeRead(SQLModel):
     created_at: datetime
     ingredients: list[IngredientRead]
     instructions: list[InstructionRead]
+    tags: list[TagRead]
 
 
 class RecipeCreate(SQLModel):
@@ -71,3 +77,4 @@ class RecipeCreate(SQLModel):
     notes: str | None = None
     ingredients: list[IngredientCreate] = []
     instructions: list[InstructionCreate] = []
+    tags: list[str] = []

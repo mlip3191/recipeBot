@@ -88,11 +88,12 @@ def test_upsert_rejects_unknown_protein(session: Session) -> None:
 
 
 def test_recipe_to_dict_round_trips_through_upsert(session: Session) -> None:
-    upsert_recipe(session, recipe_data(name="Original"))
+    upsert_recipe(session, recipe_data(name="Original", tags=["weeknight", "spicy"]))
     session.commit()
 
     original = session.exec(select(Recipe).where(Recipe.name == "Original")).first()
     exported = recipe_to_dict(original)
+    assert set(exported["tags"]) == {"weeknight", "spicy"}
 
     exported["name"] = "Copy"
     upsert_recipe(session, exported)
@@ -103,3 +104,18 @@ def test_recipe_to_dict_round_trips_through_upsert(session: Session) -> None:
     assert copy.genre == original.genre
     assert [i.item for i in copy.ingredients] == [i.item for i in original.ingredients]
     assert [i.text for i in copy.instructions] == [i.text for i in original.instructions]
+    assert {t.name for t in copy.tags} == {"weeknight", "spicy"}
+
+
+def test_upsert_attaches_and_replaces_tags(session: Session) -> None:
+    upsert_recipe(session, recipe_data(tags=["weeknight"]))
+    session.commit()
+
+    recipe = session.exec(select(Recipe).where(Recipe.name == "Test Recipe")).first()
+    assert [t.name for t in recipe.tags] == ["weeknight"]
+
+    upsert_recipe(session, recipe_data(tags=["spicy", "meal-prep"]))
+    session.commit()
+
+    session.refresh(recipe)
+    assert {t.name for t in recipe.tags} == {"spicy", "meal-prep"}

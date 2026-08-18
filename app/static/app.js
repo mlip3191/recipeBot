@@ -1,8 +1,10 @@
 const STORAGE_KEY_PROTEIN = "recipeVault.protein";
 const STORAGE_KEY_GENRE = "recipeVault.genre";
+const STORAGE_KEY_TAGS = "recipeVault.tags";
 
 const proteinSelect = document.getElementById("protein-select");
 const genreSelect = document.getElementById("genre-select");
+const tagCheckboxes = document.getElementById("tag-checkboxes");
 const randomBtn = document.getElementById("random-btn");
 const anotherBtn = document.getElementById("another-btn");
 const recipeCard = document.getElementById("recipe-card");
@@ -45,10 +47,31 @@ async function fetchJSON(url) {
     return { ok: response.ok, status: response.status, data };
 }
 
+function populateTagCheckboxes(tags, selectedNames) {
+    tagCheckboxes.innerHTML = "";
+    for (const tag of tags) {
+        const label = el("label", { className: "tag-checkbox" });
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = tag.name;
+        input.checked = selectedNames.includes(tag.name);
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(tag.name));
+        tagCheckboxes.appendChild(label);
+    }
+}
+
+function getSelectedTags() {
+    return Array.from(tagCheckboxes.querySelectorAll('input[type="checkbox"]:checked')).map(
+        (input) => input.value
+    );
+}
+
 async function loadFilters() {
-    const [proteinsResult, genresResult] = await Promise.all([
+    const [proteinsResult, genresResult, tagsResult] = await Promise.all([
         fetchJSON("/api/proteins"),
         fetchJSON("/api/genres"),
+        fetchJSON("/api/tags"),
     ]);
 
     const proteinItems = proteinsResult.ok
@@ -57,18 +80,30 @@ async function loadFilters() {
     const genreItems = genresResult.ok
         ? genresResult.data.map((genre) => ({ value: genre, label: genre }))
         : [];
+    const tagItems = tagsResult.ok ? tagsResult.data : [];
 
     populateSelect(proteinSelect, proteinItems, "Any protein");
     populateSelect(genreSelect, genreItems, "Any genre");
 
     restoreSelection(proteinSelect, STORAGE_KEY_PROTEIN);
     restoreSelection(genreSelect, STORAGE_KEY_GENRE);
+
+    let savedTags = [];
+    try {
+        savedTags = JSON.parse(localStorage.getItem(STORAGE_KEY_TAGS) || "[]");
+    } catch (error) {
+        savedTags = [];
+    }
+    populateTagCheckboxes(tagItems, savedTags);
 }
 
 function buildQuery() {
     const params = new URLSearchParams();
     if (proteinSelect.value) params.set("protein", proteinSelect.value);
     if (genreSelect.value) params.set("genre", genreSelect.value);
+    for (const tag of getSelectedTags()) {
+        params.append("tags", tag);
+    }
     const query = params.toString();
     return query ? `?${query}` : "";
 }
@@ -93,6 +128,9 @@ function renderRecipe(recipe) {
     const badges = el("div", { className: "badges" });
     badges.appendChild(el("span", { className: "badge", text: recipe.protein.name }));
     badges.appendChild(el("span", { className: "badge", text: recipe.genre }));
+    for (const tag of recipe.tags) {
+        badges.appendChild(el("span", { className: "badge badge-tag", text: tag.name }));
+    }
     recipeCard.appendChild(badges);
 
     const meta = el("p", {
@@ -159,6 +197,7 @@ async function rollRandom() {
 function persistSelections() {
     localStorage.setItem(STORAGE_KEY_PROTEIN, proteinSelect.value);
     localStorage.setItem(STORAGE_KEY_GENRE, genreSelect.value);
+    localStorage.setItem(STORAGE_KEY_TAGS, JSON.stringify(getSelectedTags()));
 }
 
 async function init() {
@@ -166,6 +205,7 @@ async function init() {
 
     proteinSelect.addEventListener("change", persistSelections);
     genreSelect.addEventListener("change", persistSelections);
+    tagCheckboxes.addEventListener("change", persistSelections);
     randomBtn.addEventListener("click", rollRandom);
     anotherBtn.addEventListener("click", rollRandom);
 }

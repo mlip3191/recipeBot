@@ -37,7 +37,9 @@ def get_protein_id(client: TestClient, name: str) -> int:
     return next(p["id"] for p in proteins if p["name"] == name)
 
 
-def recipe_payload(protein_id: int, name: str = "Test Recipe", genre: str = "Test") -> dict:
+def recipe_payload(
+    protein_id: int, name: str = "Test Recipe", genre: str = "Test", tags: list[str] | None = None
+) -> dict:
     return {
         "name": name,
         "protein_id": protein_id,
@@ -55,6 +57,7 @@ def recipe_payload(protein_id: int, name: str = "Test Recipe", genre: str = "Tes
             {"text": "Second step", "step_number": 2},
             {"text": "First step", "step_number": 1},
         ],
+        "tags": tags or [],
     }
 
 
@@ -225,3 +228,80 @@ def test_delete_recipe(client: TestClient) -> None:
 def test_delete_recipe_not_found(client: TestClient) -> None:
     response = client.delete("/api/recipes/9999")
     assert response.status_code == 404
+
+
+def test_create_recipe_with_tags_auto_creates_them(client: TestClient) -> None:
+    chicken_id = get_protein_id(client, "Chicken")
+    payload = recipe_payload(chicken_id, name="Tagged Recipe", tags=["Weeknight", "Spicy"])
+
+    created = client.post("/api/recipes", json=payload).json()
+    assert [t["name"] for t in created["tags"]] == ["Spicy", "Weeknight"]
+
+    tags = client.get("/api/tags").json()
+    assert {t["name"] for t in tags} == {"Weeknight", "Spicy"}
+
+
+def test_create_recipe_reuses_existing_tag_case_insensitively(client: TestClient) -> None:
+    chicken_id = get_protein_id(client, "Chicken")
+    client.post(
+        "/api/recipes", json=recipe_payload(chicken_id, name="First", tags=["weeknight"])
+    )
+    client.post(
+        "/api/recipes", json=recipe_payload(chicken_id, name="Second", tags=["WEEKNIGHT"])
+    )
+
+    tags = client.get("/api/tags").json()
+    assert len(tags) == 1
+
+
+def test_replace_recipe_updates_tags(client: TestClient) -> None:
+    chicken_id = get_protein_id(client, "Chicken")
+    created = client.post(
+        "/api/recipes", json=recipe_payload(chicken_id, name="Retag Me", tags=["weeknight"])
+    ).json()
+    assert [t["name"] for t in created["tags"]] == ["weeknight"]
+
+    updated_payload = recipe_payload(chicken_id, name="Retag Me", tags=["meal-prep", "spicy"])
+    updated = client.put(f"/api/recipes/{created['id']}", json=updated_payload).json()
+    assert [t["name"] for t in updated["tags"]] == ["meal-prep", "spicy"]
+
+
+def test_list_and_random_recipes_filter_by_tags(client: TestClient) -> None:
+    chicken_id = get_protein_id(client, "Chicken")
+    beef_id = get_protein_id(client, "Beef")
+
+    client.post(
+        "/api/recipes",
+        json=recipe_payload(chicken_id, name="Smoker Chicken", tags=["smoker", "weeknight"]),
+    )
+    client.post(
+        "/api/recipes",
+        json=recipe_payload(beef_id, name="Smoker Brisket", tags=["smoker"]),
+    )
+    client.post(
+        "/api/recipes",
+        json=recipe_payload(chicken_id, name="Plain Chicken", tags=[]),
+    )
+
+    by_single_tag = client.get("/api/recipes", params={"tags": ["smoker"]}).json()
+    assert {r["name"] for r in by_single_tag} == {"Smoker Chicken", "Smoker Brisket"}
+
+    by_both_tags = client.get(
+        "/api/recipes", params={"tags": ["smoker", "weeknight"]}
+    ).json()
+    assert {r["name"] for r in by_both_tags} == {"Smoker Chicken"}
+
+    unknown_tag = client.get("/api/recipes", params={"tags": ["nonexistent"]}).json()
+    assert unknown_tag == []
+
+    for _ in range(5):
+        response = client.get(
+            "/api/recipes/random", params={"tags": ["smoker", "weeknight"]}
+        )
+        assert response.status_code == 200
+        assert response.json()["name"] == "Smoker Chicken"
+
+    random_unknown_tag = client.get(
+        "/api/recipes/random", params={"tags": ["nonexistent"]}
+    )
+    assert random_unknown_tag.status_code == 404

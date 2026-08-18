@@ -2,8 +2,8 @@ import pytest
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from app.models import Ingredient, Instruction, Protein, Recipe
-from app.seed import PROTEIN_NAMES, SAMPLE_RECIPES, seed
+from app.models import Ingredient, Instruction, Protein, Recipe, Tag
+from app.seed import PROTEIN_NAMES, SAMPLE_RECIPES, TAG_NAMES, seed
 
 
 @pytest.fixture()
@@ -29,16 +29,20 @@ def test_seed_is_idempotent(session: Session) -> None:
     seed(session)
     proteins_after_first = session.exec(select(Protein)).all()
     recipes_after_first = session.exec(select(Recipe)).all()
+    tags_after_first = session.exec(select(Tag)).all()
 
     assert len(proteins_after_first) == len(PROTEIN_NAMES)
     assert len(recipes_after_first) == len(SAMPLE_RECIPES)
+    assert len(tags_after_first) == len(TAG_NAMES)
 
     seed(session)
     proteins_after_second = session.exec(select(Protein)).all()
     recipes_after_second = session.exec(select(Recipe)).all()
+    tags_after_second = session.exec(select(Tag)).all()
 
     assert len(proteins_after_second) == len(PROTEIN_NAMES)
     assert len(recipes_after_second) == len(SAMPLE_RECIPES)
+    assert len(tags_after_second) == len(TAG_NAMES)
 
 
 def test_recipe_round_trips_with_ordered_children(session: Session) -> None:
@@ -76,3 +80,51 @@ def test_recipe_round_trips_with_ordered_children(session: Session) -> None:
     assert fetched.protein.name == "Chicken"
     assert [i.item for i in fetched.ingredients] == ["salt", "pepper"]
     assert [i.text for i in fetched.instructions] == ["First step", "Second step"]
+
+
+def test_recipe_tags_are_many_to_many_and_shared(session: Session) -> None:
+    protein = Protein(name="Beef")
+    session.add(protein)
+    session.commit()
+    session.refresh(protein)
+
+    weeknight = Tag(name="weeknight")
+    spicy = Tag(name="spicy")
+    session.add(weeknight)
+    session.add(spicy)
+    session.commit()
+
+    recipe_a = Recipe(
+        name="Recipe A",
+        protein_id=protein.id,
+        genre="Test",
+        cook_time_min=10,
+        total_time_min=15,
+        servings=2,
+        tags=[spicy, weeknight],
+    )
+    recipe_b = Recipe(
+        name="Recipe B",
+        protein_id=protein.id,
+        genre="Test",
+        cook_time_min=10,
+        total_time_min=15,
+        servings=2,
+        tags=[weeknight],
+    )
+    session.add(recipe_a)
+    session.add(recipe_b)
+    session.commit()
+
+    session.refresh(weeknight)
+    assert {r.name for r in weeknight.recipes} == {"Recipe A", "Recipe B"}
+
+    session.refresh(recipe_a)
+    assert [t.name for t in recipe_a.tags] == ["spicy", "weeknight"]
+
+    session.delete(recipe_a)
+    session.commit()
+
+    remaining_tag = session.get(Tag, weeknight.id)
+    assert remaining_tag is not None
+    assert [r.name for r in remaining_tag.recipes] == ["Recipe B"]

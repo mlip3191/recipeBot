@@ -35,6 +35,7 @@ def recipe_to_dict(recipe: Recipe) -> dict:
             {"step_number": instruction.step_number, "text": instruction.text}
             for instruction in recipe.instructions
         ],
+        "tags": [tag.name for tag in recipe.tags],
     }
 
 
