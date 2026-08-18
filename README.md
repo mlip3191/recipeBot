@@ -10,11 +10,18 @@ your own recipes. Single container, SQLite, no external services required.
 docker compose up -d --build
 ```
 
-The app is served at [http://localhost:8000](http://localhost:8000). Data
-lives in the `recipe_data` named Docker volume (mounted at `/data` in the
-container) — it is untouched by `docker compose down`, container recreation,
-or image rebuilds. The only way to lose it is `docker compose down -v`
-(which explicitly deletes volumes) or manually removing the volume.
+The `recipes` service does not publish a host port — it's only reachable
+from other containers on the compose network (`expose: 8000`), by design, so
+that the [Cloudflare Tunnel](#remote-access-via-cloudflare-tunnel) is the
+only path in. For local-only access without a tunnel, either temporarily add
+a `ports: ["8000:8000"]` mapping back to the `recipes` service, or reach it
+via `docker compose exec recipes curl http://localhost:8000/health`.
+
+Data lives in the `recipe_data` named Docker volume (mounted at `/data` in
+the container) — it is untouched by `docker compose down`, container
+recreation, or image rebuilds. The only way to lose it is
+`docker compose down -v` (which explicitly deletes volumes) or manually
+removing the volume.
 
 Health check: `GET /health` (also wired into the container's Docker
 `HEALTHCHECK`, polled every 30s).
@@ -23,7 +30,7 @@ Health check: `GET /health` (also wired into the container's Docker
 
 | Variable       | Default                          | Purpose                                                                 |
 |----------------|-----------------------------------|--------------------------------------------------------------------------|
-| `PORT`         | `8000`                            | Port uvicorn listens on inside the container, and the host port `docker compose` publishes it on (both driven off the same value). |
+| `PORT`         | `8000`                            | Port uvicorn listens on inside the container. Not published to the host by default (see [Running it](#running-it)). Note: `expose: 8000` and the tunnel's public hostname target (`http://recipes:8000`) are hardcoded to `8000` in `docker-compose.yml` — if you override `PORT`, update those too. |
 | `DATABASE_URL` | `sqlite:////data/recipes.db`      | SQLAlchemy/SQLModel database URL. The default is chosen automatically — `sqlite:////data/recipes.db` when `/data` exists (i.e. running in the container with the volume mounted), otherwise `sqlite:///./recipes.db` for local, non-Docker runs. Override only for non-default setups. |
 
 Both can be set via a `.env` file next to `docker-compose.yml` (auto-loaded
@@ -32,6 +39,45 @@ by Docker Compose) or exported in your shell before `docker compose up`:
 ```sh
 PORT=9090 docker compose up -d
 ```
+
+## Remote access via Cloudflare Tunnel
+
+The `cloudflared` service in `docker-compose.yml` exposes the app to the
+internet through a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+— no port forwarding or public IP needed. It connects outbound to
+Cloudflare and routes traffic to the `recipes` service over the internal
+compose network (`http://recipes:8000`), which is why `recipes` doesn't need
+a published host port.
+
+**One-time setup:**
+
+1. In the [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/),
+   go to **Networks → Tunnels** and create a new tunnel (choose the
+   "Docker" connector type when prompted).
+2. Add a **Public Hostname** for the tunnel pointing at service
+   `http://recipes:8000` — this is the hostname you'll visit to reach the
+   app (e.g. `recipes.yourdomain.com`).
+3. Copy the tunnel token shown in the dashboard.
+4. Copy `.env.example` to `.env` and paste the token in:
+
+   ```sh
+   cp .env.example .env
+   ```
+
+   ```env
+   TUNNEL_TOKEN=your-token-here
+   ```
+
+   `.env` is gitignored — never commit it.
+5. Start (or restart) the stack:
+
+   ```sh
+   docker compose up -d --build
+   ```
+
+The app is now reachable at the public hostname you configured in step 2.
+`cloudflared` is set to `restart: unless-stopped` and depends on `recipes`
+being up.
 
 ## Import / export
 
