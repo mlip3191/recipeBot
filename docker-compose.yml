@@ -5,6 +5,7 @@ services:
       - "8000:8000"
     volumes:
       - recipe_data:/data
+      - ./backups:/backups
     restart: unless-stopped
 
 volumes:
