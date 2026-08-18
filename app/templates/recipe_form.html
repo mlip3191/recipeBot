@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{% if recipe_id %}Edit Recipe{% else %}Add Recipe{% endif %} · Recipe Vault{% endblock %}
+
+{% block content %}
+    <form id="recipe-form" data-recipe-id="{{ recipe_id or '' }}">
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="field-name">Name</label>
+                <input id="field-name" type="text" required>
+            </div>
+            <div class="form-field">
+                <label for="field-protein">Protein</label>
+                <select id="field-protein" required></select>
+            </div>
+            <div class="form-field">
+                <label for="field-genre">Genre</label>
+                <input id="field-genre" type="text" list="genre-options" required>
+                <datalist id="genre-options"></datalist>
+            </div>
+            <div class="form-field">
+                <label for="field-cook-time">Cook time (min)</label>
+                <input id="field-cook-time" type="number" min="0" required>
+            </div>
+            <div class="form-field">
+                <label for="field-total-time">Total time (min)</label>
+                <input id="field-total-time" type="number" min="0" required>
+            </div>
+            <div class="form-field">
+                <label for="field-servings">Servings</label>
+                <input id="field-servings" type="number" min="1" required>
+            </div>
+            <div class="form-field">
+                <label for="field-source">Source</label>
+                <input id="field-source" type="text">
+            </div>
+            <div class="form-field form-field-wide">
+                <label for="field-notes">Notes</label>
+                <textarea id="field-notes" rows="2"></textarea>
+            </div>
+        </div>
+
+        <section class="form-section">
+            <div class="form-section-header">
+                <h2>Ingredients</h2>
+                <button type="button" id="add-ingredient-btn" class="btn btn-secondary btn-small">Add ingredient</button>
+            </div>
+            <div id="ingredients-rows" class="dynamic-rows"></div>
+        </section>
+
+        <section class="form-section">
+            <div class="form-section-header">
+                <h2>Instructions</h2>
+                <button type="button" id="add-instruction-btn" class="btn btn-secondary btn-small">Add step</button>
+            </div>
+            <div id="instructions-rows" class="dynamic-rows"></div>
+        </section>
+
+        <p id="form-status" class="form-status hidden"></p>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Recipe</button>
+            <a href="/recipes" class="btn btn-secondary">Cancel</a>
+            <button type="button" id="delete-btn" class="btn btn-danger hidden">Delete Recipe</button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/recipe-form.js"></script>
+{% endblock %}

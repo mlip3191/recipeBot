@@ -37,14 +37,36 @@ body {
 }
 
 .site-header {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 1rem;
     text-align: center;
     border-bottom: 1px solid var(--border);
 }
 
 .site-header h1 {
-    margin: 0;
+    margin: 0 0 0.5rem;
     font-size: 1.75rem;
+}
+
+.site-header h1 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.site-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+}
+
+.site-nav a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.site-nav a:hover {
+    text-decoration: underline;
 }
 
 .container {
@@ -109,6 +131,25 @@ select {
     border: 1px solid var(--accent);
 }
 
+.btn-danger {
+    background: transparent;
+    color: #c0392b;
+    border: 1px solid #c0392b;
+}
+
+.btn-small {
+    flex: 0 0 auto;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 .btn:disabled {
     opacity: 0.6;
     cursor: default;
@@ -135,6 +176,18 @@ select {
 
 .recipe-card h2 {
     margin: 0 0 0.6rem;
+}
+
+.recipe-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.recipe-title-row h2 {
+    margin: 0;
 }
 
 .badges {
@@ -187,6 +240,148 @@ select {
     margin: 0.25rem 0;
 }
 
+.table-wrap {
+    overflow-x: auto;
+}
+
+.recipes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recipes-table th,
+.recipes-table td {
+    text-align: left;
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.recipes-table a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.recipes-table a:hover {
+    text-decoration: underline;
+}
+
+input[type="text"],
+input[type="search"],
+input[type="number"],
+textarea {
+    padding: 0.6rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--fg);
+    font-size: 1rem;
+    font-family: inherit;
+    width: 100%;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-field-wide {
+    grid-column: 1 / -1;
+}
+
+.form-field label {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.form-section {
+    margin-bottom: 1.75rem;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.form-section-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.dynamic-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.dynamic-row {
+    display: grid;
+    grid-template-columns: 0.7fr 0.7fr 1.3fr 1.3fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.dynamic-row-instruction {
+    grid-template-columns: 1fr auto;
+}
+
+.row-input-wide {
+    width: 100%;
+}
+
+.row-controls {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.icon-btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.icon-btn-danger {
+    color: #c0392b;
+    border-color: #c0392b;
+}
+
+.form-status {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--badge-bg);
+    color: var(--fg);
+    margin-bottom: 1rem;
+}
+
+.form-status-error {
+    background: rgba(192, 57, 43, 0.12);
+    color: #c0392b;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
 @media (max-width: 420px) {
     .filters {
         flex-direction: column;
@@ -194,5 +389,17 @@ select {
 
     .actions {
         flex-direction: column;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dynamic-row {
+        grid-template-columns: 1fr;
+    }
+
+    .dynamic-row-instruction {
+        grid-template-columns: 1fr;
     }
 }

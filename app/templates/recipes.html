@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}All Recipes · Recipe Vault{% endblock %}
+
+{% block content %}
+    <section class="filters">
+        <div class="filter-field">
+            <label for="search-input">Search by name</label>
+            <input id="search-input" type="search" placeholder="e.g. chicken curry">
+        </div>
+        <div class="filter-field">
+            <label for="protein-filter">Protein</label>
+            <select id="protein-filter"></select>
+        </div>
+    </section>
+
+    <p id="list-empty-state" class="empty-state hidden"></p>
+
+    <div class="table-wrap">
+        <table id="recipes-table" class="recipes-table hidden">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Protein</th>
+                    <th>Genre</th>
+                    <th>Cook / Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="recipes-tbody"></tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/recipes.js"></script>
+{% endblock %}

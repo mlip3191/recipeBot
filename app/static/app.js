@@ -81,7 +81,12 @@ function formatIngredient(ingredient) {
 function renderRecipe(recipe) {
     recipeCard.innerHTML = "";
 
-    recipeCard.appendChild(el("h2", { text: recipe.name }));
+    const titleRow = el("div", { className: "recipe-title-row" });
+    titleRow.appendChild(el("h2", { text: recipe.name }));
+    const editLink = el("a", { className: "btn btn-secondary btn-small", text: "Edit" });
+    editLink.href = `/recipes/${recipe.id}/edit`;
+    titleRow.appendChild(editLink);
+    recipeCard.appendChild(titleRow);
 
     const badges = el("div", { className: "badges" });
     badges.appendChild(el("span", { className: "badge", text: recipe.protein.name }));
