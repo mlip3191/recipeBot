@@ -62,6 +62,11 @@ def list_proteins(session: Session = Depends(get_session)):
     return session.exec(select(Protein).order_by(Protein.name)).all()
 
 
+@router.get("/genres", response_model=list[str])
+def list_genres(session: Session = Depends(get_session)):
+    return session.exec(select(Recipe.genre).distinct().order_by(Recipe.genre)).all()
+
+
 @router.get("/recipes", response_model=list[RecipeSummary])
 def list_recipes(
     protein: str | None = None,
