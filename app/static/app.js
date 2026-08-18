@@ -17,7 +17,9 @@ function el(tag, options = {}) {
 
 function populateSelect(select, items, defaultLabel) {
     select.innerHTML = "";
-    select.appendChild(el("option", { text: defaultLabel }));
+    const defaultOption = el("option", { text: defaultLabel });
+    defaultOption.value = "";
+    select.appendChild(defaultOption);
     for (const item of items) {
         const option = el("option", { text: item.label });
         option.value = item.value;

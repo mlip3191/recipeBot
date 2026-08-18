@@ -28,7 +28,9 @@ async function fetchJSON(url) {
 async function loadProteinFilter() {
     const { ok, data } = await fetchJSON("/api/proteins");
     proteinFilter.innerHTML = "";
-    proteinFilter.appendChild(el("option", { text: "Any protein" }));
+    const defaultOption = el("option", { text: "Any protein" });
+    defaultOption.value = "";
+    proteinFilter.appendChild(defaultOption);
     if (ok) {
         for (const protein of data) {
             const option = el("option", { text: protein.name });
