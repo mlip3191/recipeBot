@@ -1,8 +1,11 @@
 services:
   recipes:
     build: .
+    environment:
+      - PORT=${PORT:-8000}
+      - DATABASE_URL=${DATABASE_URL:-}
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:${PORT:-8000}"
     volumes:
       - recipe_data:/data
       - ./backups:/backups

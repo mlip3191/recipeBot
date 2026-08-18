@@ -8,7 +8,7 @@ DEFAULT_DATABASE_URL = (
     if os.path.isdir("/data")
     else "sqlite:///./recipes.db"
 )
-DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+DATABASE_URL = os.environ.get("DATABASE_URL") or DEFAULT_DATABASE_URL
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
