@@ -67,12 +67,12 @@ class RecipeRead(SQLModel):
 
 
 class RecipeCreate(SQLModel):
-    name: str
-    protein_id: int
-    genre: str
-    cook_time_min: int
-    total_time_min: int
-    servings: int
+    name: str | None = None
+    protein_id: int | None = None
+    genre: str | None = None
+    cook_time_min: int | None = None
+    total_time_min: int | None = None
+    servings: int | None = None
     source: str | None = None
     notes: str | None = None
     ingredients: list[IngredientCreate] = []

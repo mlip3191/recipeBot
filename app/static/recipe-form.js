@@ -80,7 +80,6 @@ function moveRow(row, direction) {
 function createIngredientRow(data = {}) {
     const row = el("div", { className: "dynamic-row" });
     const itemInput = field("Item", data.item, "item");
-    itemInput.required = true;
 
     row.appendChild(field("Qty", data.quantity, "quantity"));
     row.appendChild(field("Unit", data.unit, "unit"));
@@ -93,7 +92,6 @@ function createIngredientRow(data = {}) {
 function createInstructionRow(data = {}) {
     const row = el("div", { className: "dynamic-row dynamic-row-instruction" });
     const textInput = field("Step description", data.text, "text", true);
-    textInput.required = true;
 
     row.appendChild(textInput);
     row.appendChild(rowControls(() => row));
@@ -102,9 +100,8 @@ function createInstructionRow(data = {}) {
 
 function populateProteinSelect(proteins) {
     proteinSelect.innerHTML = "";
-    const placeholder = el("option", { text: "Select a protein" });
+    const placeholder = el("option", { text: "No protein selected" });
     placeholder.value = "";
-    placeholder.disabled = true;
     placeholder.selected = true;
     proteinSelect.appendChild(placeholder);
 
@@ -203,12 +200,12 @@ async function handleSubmit(event) {
     hideStatus();
 
     const payload = {
-        name: nameInput.value.trim(),
-        protein_id: Number(proteinSelect.value),
-        genre: genreInput.value.trim(),
-        cook_time_min: Number(cookTimeInput.value),
-        total_time_min: Number(totalTimeInput.value),
-        servings: Number(servingsInput.value),
+        name: nameInput.value.trim() || null,
+        protein_id: proteinSelect.value ? Number(proteinSelect.value) : null,
+        genre: genreInput.value.trim() || null,
+        cook_time_min: cookTimeInput.value === "" ? null : Number(cookTimeInput.value),
+        total_time_min: totalTimeInput.value === "" ? null : Number(totalTimeInput.value),
+        servings: servingsInput.value === "" ? null : Number(servingsInput.value),
         source: sourceInput.value.trim() || null,
         notes: notesInput.value.trim() || null,
         ingredients: collectIngredients(),

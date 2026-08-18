@@ -17,6 +17,26 @@ from app.schemas import (
 router = APIRouter(prefix="/api", tags=["api"])
 
 NO_MATCH_DETAIL = "No recipes match those filters."
+DEFAULT_RECIPE_NAME = "Untitled Recipe"
+UNSPECIFIED_PROTEIN_NAME = "Unspecified"
+
+
+def resolve_or_create_protein_id(session: Session, protein_id: int | None) -> int:
+    if protein_id is not None:
+        if session.get(Protein, protein_id) is None:
+            raise HTTPException(
+                status_code=400, detail=f"Protein {protein_id} not found."
+            )
+        return protein_id
+
+    unspecified = session.exec(
+        select(Protein).where(Protein.name == UNSPECIFIED_PROTEIN_NAME)
+    ).first()
+    if unspecified is None:
+        unspecified = Protein(name=UNSPECIFIED_PROTEIN_NAME)
+        session.add(unspecified)
+        session.flush()
+    return unspecified.id
 
 
 def resolve_protein_id(session: Session, protein: str) -> int | None:
@@ -166,18 +186,15 @@ def get_recipe(recipe_id: int, session: Session = Depends(get_session)):
 
 @router.post("/recipes", response_model=RecipeRead, status_code=201)
 def create_recipe(payload: RecipeCreate, session: Session = Depends(get_session)):
-    if session.get(Protein, payload.protein_id) is None:
-        raise HTTPException(
-            status_code=400, detail=f"Protein {payload.protein_id} not found."
-        )
+    protein_id = resolve_or_create_protein_id(session, payload.protein_id)
 
     recipe = Recipe(
-        name=payload.name,
-        protein_id=payload.protein_id,
-        genre=payload.genre,
-        cook_time_min=payload.cook_time_min,
-        total_time_min=payload.total_time_min,
-        servings=payload.servings,
+        name=(payload.name or "").strip() or DEFAULT_RECIPE_NAME,
+        protein_id=protein_id,
+        genre=(payload.genre or "").strip(),
+        cook_time_min=payload.cook_time_min or 0,
+        total_time_min=payload.total_time_min or 0,
+        servings=payload.servings or 0,
         source=payload.source,
         notes=payload.notes,
     )
@@ -198,17 +215,14 @@ def replace_recipe(
     recipe = session.get(Recipe, recipe_id)
     if recipe is None:
         raise HTTPException(status_code=404, detail=f"Recipe {recipe_id} not found.")
-    if session.get(Protein, payload.protein_id) is None:
-        raise HTTPException(
-            status_code=400, detail=f"Protein {payload.protein_id} not found."
-        )
+    protein_id = resolve_or_create_protein_id(session, payload.protein_id)
 
-    recipe.name = payload.name
-    recipe.protein_id = payload.protein_id
-    recipe.genre = payload.genre
-    recipe.cook_time_min = payload.cook_time_min
-    recipe.total_time_min = payload.total_time_min
-    recipe.servings = payload.servings
+    recipe.name = (payload.name or "").strip() or DEFAULT_RECIPE_NAME
+    recipe.protein_id = protein_id
+    recipe.genre = (payload.genre or "").strip()
+    recipe.cook_time_min = payload.cook_time_min or 0
+    recipe.total_time_min = payload.total_time_min or 0
+    recipe.servings = payload.servings or 0
     recipe.source = payload.source
     recipe.notes = payload.notes
     session.add(recipe)

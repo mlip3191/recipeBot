@@ -230,6 +230,41 @@ def test_delete_recipe_not_found(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_create_recipe_with_no_fields_uses_defaults(client: TestClient) -> None:
+    response = client.post("/api/recipes", json={})
+    assert response.status_code == 201
+    created = response.json()
+
+    assert created["name"] == "Untitled Recipe"
+    assert created["protein"]["name"] == "Unspecified"
+    assert created["genre"] == ""
+    assert created["cook_time_min"] == 0
+    assert created["total_time_min"] == 0
+    assert created["servings"] == 0
+    assert created["ingredients"] == []
+    assert created["instructions"] == []
+    assert created["tags"] == []
+
+
+def test_create_recipe_without_protein_reuses_unspecified(client: TestClient) -> None:
+    first = client.post("/api/recipes", json={"name": "First"}).json()
+    second = client.post("/api/recipes", json={"name": "Second"}).json()
+
+    assert first["protein"]["id"] == second["protein"]["id"]
+    proteins = client.get("/api/proteins").json()
+    assert len([p for p in proteins if p["name"] == "Unspecified"]) == 1
+
+
+def test_replace_recipe_can_clear_protein_back_to_unspecified(client: TestClient) -> None:
+    chicken_id = get_protein_id(client, "Chicken")
+    created = client.post("/api/recipes", json=recipe_payload(chicken_id)).json()
+    assert created["protein"]["name"] == "Chicken"
+
+    updated = client.put(f"/api/recipes/{created['id']}", json={}).json()
+    assert updated["protein"]["name"] == "Unspecified"
+    assert updated["name"] == "Untitled Recipe"
+
+
 def test_create_recipe_with_tags_auto_creates_them(client: TestClient) -> None:
     chicken_id = get_protein_id(client, "Chicken")
     payload = recipe_payload(chicken_id, name="Tagged Recipe", tags=["Weeknight", "Spicy"])
