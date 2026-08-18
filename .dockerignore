@@ -1,0 +1,16 @@
+.git
+.gitignore
+.github
+.claude
+CLAUDE.md
+README.md
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+tests/
+data/
+*.db
